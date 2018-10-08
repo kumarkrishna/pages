@@ -1,0 +1,76 @@
+---
+layout: post
+categories: programming
+author: Kumar Krishna Agrawal
+date: 2015-12-21 03:12:09
+title: A lightweight NN library 
+summary: Torch &colon; Lua &colon;&colon; Theano &colon; Python
+---
+
+With increasing interest in the field of Deep Learning, the number of toolkits supporting such learning architectures is also on a rise. Having previously experimented with [CAFFE](https://swarbrickjones.wordpress.com/2015/04/29/convolutional-autoencoders-in-pythontheanolasagne/), recently I have been using [Theano](http://deeplearning.net) as my goto resource. Largely because of the extensive documentation, and its native support for several modalities like text, speech and images as well.
+
+However, recently while reading an [interesting paper](http://cs.stanford.edu/people/karpathy/deepimagesent/) on generating natural captions for images, I came across the [NeuralTalk2](https://github.com/karpathy/neuraltalk2) library developed by Andrej Karpathy, from the Stanford AI Lab. This was an update to the previous implementation on Python+Numpy, and used [Torch7](torch.ch) for backend. And this, along with some more modifications, had resulted in a 100x increase in the training speed of the Language Model. 
+<br>
+<br>
+The obvious question : 'Why Torch?'
+
+>"Torch is a scientific computing framework with wide support for machine learning algorithms that puts GPUs first. It is easy to use and efficient, thanks to an easy and fast scripting language, LuaJIT, and an underlying C/CUDA implementation." - Official Torch Documentation
+
+Experimenting with the source, I realised that Torch had a similar interface and was quite as intuitive as Theano. Also, with simple network declarations, and scripting prowess, Torch is much lighter than Theano as an alternative. 
+<br>
+Digging deeper, let us check how much of the performance can be attributed to the underlying scripting language. For instance, let us compare one of the most basic operations that NN library supports, matrix multiplication. 
+<br>
+Consider the following naive implementation in Lua: 
+
+#### Lua : Matrix Multiplication
+    require 'torch'
+    mat1=torch.rand(10, 10)
+    mat2=torch.rand(10, 10)
+    function MatMul( m1, m2 )
+        local res = {}
+        for i = 1, m1:size(1)do
+            res[i] = {}
+            for j = 1, m2:size(2) do
+                res[i][j] = 0
+                for k = 1, m2:size(1) do
+                    res[i][j] = res[i][j] + m1[i][k] * m2[k][j]
+                end
+            end
+        end
+        return res
+    end
+    result = MatMul( mat1, mat2 )
+
+The above source is strikingly similar, if we consider a Python implementation :
+
+#### Python : Matrix Multiplication
+    import numpy
+    mat1=numpy.random.rand(10, 10)
+    mat2=numpy.random.rand(10, 10)
+    def MatMul( m1, m2 ):
+        res = [[0 for i in xrange(0, len(m1))] 
+                for j in xrange(0, len(m2[0]))]
+        for i in xrange(0, len(m1)) :
+            for j in xrange(0, len(m2[0])):
+                res[i][j] = 0
+                for k in xrange(0, len(m2)):
+                    res[i][j] = res[i][j] + m1[i][k] + m2[k][j]
+        return res
+    result = MatMul( mat1, mat2 )
+
+A good benchmark for performance, would therefore be the system-level execution time of both the snippets. 
+Keeping things minimalistic, I've used the `time` utility to compare the runtimes, over 10 iterations.
+And behold, averaging over the execution time :
+#### Execution time comparison :
+    Python :
+        user   0m0.083s
+        sys    0m0.036s
+    Lua :
+        user   0m0.011s
+        sys    0m0.003s
+
+Much of the analysis is preliminary, and it would be interesting to look more into this; something I plan to follow up. 
+While Torch is indeed lightweight and more suited for embedded systems, Theano has an extensive community support and libraries like [Keras](http://keras.io/), [Lasagne](https://github.com/Lasagne/Lasagne) which make it more accessible, abstracting away the implementation details. 
+<br>
+Similar benchmark testing for Torch7 vs Theano can be found [here](http://fastml.com/torch-vs-theano/).
+
